@@ -27,7 +27,7 @@ jobs:
 
       # 4. Build project (if React build exists)
       - name: Build project
-        run: npm run build || echo "No build script found, skipping"
+        run: npm run build-react || echo "No build script found, skipping"
 
       # 5. Run unit tests
       - name: Run tests
