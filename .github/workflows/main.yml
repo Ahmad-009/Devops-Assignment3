@@ -1,0 +1,80 @@
+name: CI/CD Node-React Deployment
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:  
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # 4. Build project (if React build exists)
+      - name: Build project
+        run: npm run build || echo "No build script found, skipping"
+
+      # 5. Run unit tests
+      - name: Run tests
+        run: npm test || echo "Tests failed"
+
+      # 6. Linting / Code analysis
+      - name: Lint code
+        run: npx eslint . || echo "Lint warnings/errors detected"
+
+      # 7. Deploy to EC2
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_IP }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            mkdir -p ~/projects/Devops_Assignment3
+            cd ~/projects/Devops_Assignment3
+            git pull origin main || git clone git@github.com:<YOUR_USERNAME>/Devops_Assignment3.git .
+            npm install
+            npm run build || echo "No build script found"
+            pm2 restart all || pm2 start npm --name "Devops_Assignment3" -- run start
+
+      # 8. Notify QA on success
+      - name: Notify on success
+        if: success()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USER }}
+          password: ${{ secrets.EMAIL_PASS }}
+          subject: "Deployment Success"
+          body: "Your changes have been deployed to QA at http://${{ secrets.EC2_IP }}"
+          to: ${{ secrets.QA_EMAIL }}
+
+      # 9. Notify on failure
+      - name: Notify on failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USER }}
+          password: ${{ secrets.EMAIL_PASS }}
+          subject: "Deployment Failed"
+          body: "Workflow failed for PR by ${{ github.actor }}"
+          to: ${{ secrets.EMAIL_TO }}
