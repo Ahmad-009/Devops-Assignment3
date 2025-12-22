@@ -50,7 +50,7 @@ jobs:
             cd ~/projects/Devops_Assignment3
             git pull origin main || git clone git@github.com:<YOUR_USERNAME>/Devops_Assignment3.git .
             npm install
-            npm run build || echo "No build script found"
+            npm run build-react || echo "No build script found"
             pm2 restart all || pm2 start npm --name "Devops_Assignment3" -- run start
 
       # 8. Notify QA on success
