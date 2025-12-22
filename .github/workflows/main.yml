@@ -27,7 +27,7 @@ jobs:
 
       # 4. Build project (if React build exists)
       - name: Build project
-        run: npm run build || echo "No build script found, skipping"
+        run: npm run build-react || echo "No build script found, skipping"
 
       # 5. Run unit tests
       - name: Run tests
@@ -44,7 +44,9 @@ jobs:
           host: ${{ secrets.EC2_IP }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
+          passphrase: ${{ secrets.EC2_KEY_PASSPHRASE }}  # <-- Added passphrase
           port: 22
+          debug: true                                    # <-- Enable debug logs
           script: |
             mkdir -p ~/projects/Devops_Assignment3
             cd ~/projects/Devops_Assignment3
@@ -62,6 +64,7 @@ jobs:
           server_port: 465
           username: ${{ secrets.EMAIL_USER }}
           password: ${{ secrets.EMAIL_PASS }}
+          from: ${{ secrets.EMAIL_USER }}               # <-- Added 'from' field
           subject: "Deployment Success"
           body: "Your changes have been deployed to QA at http://${{ secrets.EC2_IP }}"
           to: ${{ secrets.QA_EMAIL }}
@@ -75,6 +78,7 @@ jobs:
           server_port: 465
           username: ${{ secrets.EMAIL_USER }}
           password: ${{ secrets.EMAIL_PASS }}
+          from: ${{ secrets.EMAIL_USER }}               # <-- Added 'from' field
           subject: "Deployment Failed"
           body: "Workflow failed for PR by ${{ github.actor }}"
           to: ${{ secrets.EMAIL_TO }}
