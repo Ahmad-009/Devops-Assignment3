@@ -23,13 +23,24 @@ jobs:
         run: npm install
 
       - name: Build project
-        run: npm run build-react || echo "No build script found, skipping" #using custom script instead of default one
+        run: npm run build-react || echo "No build script found, skipping"
 
       - name: Run tests
         run: npm test || echo "Tests failed"
 
       - name: Lint code
         run: npx eslint . || echo "Lint warnings/errors detected"
+
+      - name: Copy files to EC2
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.EC2_IP }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          passphrase: ${{ secrets.EC2_KEY_PASSPHRASE }}
+          port: 22
+          source: "."
+          target: "~/projects/Devops-Assignment3"
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.7
@@ -41,17 +52,11 @@ jobs:
           port: 22
           debug: true   
           script: |
-            rm -rf ~/projects
-            mkdir projects
-            cd projects
-            mkdir Devops-Assignment3
-            cd Devops-Assignment3
-            git clone git@github.com:Ahmad-009/Devops-Assignment3.git
+            cd ~/projects/Devops-Assignment3
             npm install
             npm run build-react || echo "No build script found"
             pm2 restart all || pm2 start npm --name "Devops-Assignment3" -- run start
-                                 
-          
+
       - name: Notify on success
         if: success()
         uses: dawidd6/action-send-mail@v3
@@ -60,7 +65,7 @@ jobs:
           server_port: 465
           username: ${{ secrets.EMAIL_USER }}
           password: ${{ secrets.EMAIL_PASS }}
-          from: ${{ secrets.EMAIL_USER }}             
+          from: ${{ secrets.EMAIL_USER }}
           subject: "Deployment Success"
           body: "Your changes have been deployed to QA at http://${{ secrets.EC2_IP }}"
           to: ${{ secrets.QA_EMAIL }}
@@ -73,7 +78,7 @@ jobs:
           server_port: 465
           username: ${{ secrets.EMAIL_USER }}
           password: ${{ secrets.EMAIL_PASS }}
-          from: ${{ secrets.EMAIL_USER }}               
+          from: ${{ secrets.EMAIL_USER }}
           subject: "Deployment Failed"
           body: "Workflow failed for PR by ${{ github.actor }}"
           to: ${{ secrets.EMAIL_TO }}
