@@ -39,15 +39,16 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           passphrase: ${{ secrets.EC2_KEY_PASSPHRASE }} 
           port: 22
-          debug: true                                    
+          debug: true   
           script: |
-            mkdir -p ~/projects/Devops_Assignment3
-            cd ~/projects/Devops_Assignment3
-            git pull origin main || git clone git@github.com:Ahmad-009/Devops-Assignment3.git .
+            rm -rf ~/projects/Devops-Assignment3
+            git clone git@github.com:Ahmad-009/Devops-Assignment3.git ~/projects/Devops-Assignment3
+            cd ~/projects/Devops-Assignment3
             npm install
             npm run build-react || echo "No build script found"
-            pm2 restart all || pm2 start npm --name "Devops_Assignment3" -- run start
-
+            pm2 restart all || pm2 start npm --name "Devops-Assignment3" -- run start
+                                 
+          
       - name: Notify on success
         if: success()
         uses: dawidd6/action-send-mail@v3
